@@ -66,6 +66,12 @@
             z-index: 100;
         }
 
+        #menuToggleBtn {
+            display: none; /* Escondido por padrão em telas grandes */
+            padding: 0.75rem;
+            width: 50px;
+        }
+
         .logo {
             display: flex;
             align-items: center;
@@ -143,6 +149,15 @@
             display: flex;
             flex-direction: column;
         }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 199; /* Abaixo do sidebar */
+        }
+
 
         .search-box {
             position: relative;
@@ -303,11 +318,11 @@
             flex-direction: column;
             justify-content: space-between;
             padding: 1.5rem;
-            opacity: 0;
+            opacity: 0; /* A visibilidade agora é controlada por uma classe JS */
             transition: opacity 0.3s ease;
         }
 
-        .player-container:hover .player-overlay {
+        .player-container.controls-visible .player-overlay {
             opacity: 1;
         }
 
@@ -607,14 +622,44 @@
         @media (max-width: 1024px) {
             .app-container {
                 grid-template-columns: 1fr;
+                grid-template-rows: 60px 1fr auto; /* Ajuste para header menor e EPG flexível */
                 grid-template-areas: 
                     "header"
                     "main"
                     "epg";
             }
 
+            #menuToggleBtn {
+                display: flex; /* Mostra o botão de menu */
+            }
+
             .sidebar {
-                display: none;
+                position: fixed;
+                top: 0; left: 0; bottom: 0;
+                width: 300px;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease-in-out;
+                z-index: 200;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay.open {
+                display: block;
+            }
+
+            header {
+                padding: 0 1rem;
+            }
+
+            .logo h1 {
+                display: none; /* Esconde o texto do logo em telas pequenas */
+            }
+
+            .main-content {
+                padding: 1rem;
             }
         }
 
@@ -642,6 +687,9 @@
 <body>
     <div class="app-container">
         <header>
+            <button class="btn" id="menuToggleBtn">
+                <i class="fas fa-bars"></i>
+            </button>
             <div class="logo">
                 <i class="fas fa-satellite-dish"></i>
                 <h1>NeoStream Pro</h1>
@@ -654,10 +702,14 @@
                 <button class="btn" id="loadFileBtn">
                     <i class="fas fa-folder-open"></i> Carregar Lista
                 </button>
+                <button class="btn btn-primary" id="addUrlBtn">
+                    <i class="fas fa-plus"></i> Adicionar URL
+                </button>
             </div>
         </header>
 
         <aside class="sidebar">
+            <div class="sidebar-overlay"></div>
             <div class="search-box">
                 <i class="fas fa-search"></i>
                 <input type="text" id="searchInput" placeholder="Buscar canal...">
@@ -739,12 +791,17 @@
                     <div class="stat-value" id="streamLatency">-- ms</div>
                 </div>
             </div>
+
         </main>
 
         <!-- EPG Timeline -->
         <section class="epg-container">
             <!-- Conteúdo EPG removido para simplificação -->
         </section>
+    </div>
+
+    <div class="modal" id="addUrlModal">
+        <!-- Conteúdo do Modal será gerado via JS -->
     </div>
 
     <div class="toast-container" id="toastContainer"></div>
@@ -766,6 +823,7 @@
             currentCategory: 'all',
             favorites: new Set(),
             categories: new Set(),
+            controlsTimeout: null,
         };
 
         // Elementos DOM
@@ -773,6 +831,9 @@
             videoPlayer: document.getElementById('videoPlayer'),
             channelsList: document.getElementById('channelsList'),
             searchInput: document.querySelector('.search-box input'),
+            sidebar: document.querySelector('.sidebar'),
+            sidebarOverlay: document.querySelector('.sidebar-overlay'),
+            menuToggleBtn: document.getElementById('menuToggleBtn'),
             categoryFilters: document.getElementById('categoryFilters'),
             channelCount: document.getElementById('channelCount'),
             playlistStatus: document.getElementById('playlistStatus'),
@@ -791,7 +852,8 @@
             fileInput: document.getElementById('fileInput'),
             toastContainer: document.getElementById('toastContainer'),
             recordingIndicator: document.getElementById('recordingIndicator'),
-            subtitleTrack: document.getElementById('subtitleTrack'),
+            subtitleTrack: document.getElementById('subtitleTrack'),            
+            addUrlBtn: document.getElementById('addUrlBtn'),
         };
 
         // Inicialização
@@ -810,6 +872,7 @@
             // Controles de arquivo
             elements.loadFileBtn.addEventListener('click', () => elements.fileInput.click());
             elements.fileInput.addEventListener('change', handleFileUpload);
+            elements.addUrlBtn.addEventListener('click', showAddUrlModal);
 
             // Controles de player
             elements.playPauseBtn.addEventListener('click', togglePlayPause);
@@ -829,6 +892,12 @@
             elements.videoPlayer.addEventListener('playing', handleVideoPlaying);
             elements.videoPlayer.addEventListener('error', handleVideoError);
             elements.videoPlayer.addEventListener('timeupdate', handleTimeUpdate);
+
+            // Eventos de UI para mobile
+            elements.menuToggleBtn.addEventListener('click', toggleSidebar);
+            elements.sidebarOverlay.addEventListener('click', toggleSidebar);
+            elements.videoPlayer.parentElement.addEventListener('click', handlePlayerClick);
+
         }
 
         function initializePlayer() {
@@ -862,7 +931,7 @@
 
             const reader = new FileReader();
             reader.onload = (e) => {
-                parsePlaylist(e.target.result, file.name);
+                parsePlaylist(e.target.result, file.name, true); // merge = true
             };
             reader.onerror = () => {
                 showToast('Erro ao ler o arquivo', 'error');
@@ -870,7 +939,7 @@
             reader.readAsText(file);
         }
 
-        function parsePlaylist(data, sourceName) {
+        function parsePlaylist(data, sourceName, merge = false) {
             try {
                 const lines = data.split('\n');
                 const channels = [];
@@ -885,19 +954,29 @@
 
                     if (line.startsWith('#EXTINF:')) {
                         currentChannel = parseExtinf(line);
-                    } else if (line && !line.startsWith('#') && currentChannel.name) {
+                    } else if (line && !line.startsWith('#') && currentChannel.name && line.startsWith('http')) {
                         currentChannel.url = line;
                         channels.push({...currentChannel});
                         currentChannel = {};
                     }
                 }
 
-                // Ordenar por nome
-                channels.sort((a, b) => a.name.localeCompare(b.name));
+                if (merge) {
+                    const existingUrls = new Set(appState.playlist.map(c => c.url));
+                    const newChannels = channels.filter(c => !existingUrls.has(c.url));
+                    appState.playlist.push(...newChannels);
+                    showToast(`${newChannels.length} novos canais adicionados.`, 'success');
+                } else {
+                    appState.playlist = channels;
+                    showToast(`Lista carregada: ${channels.length} canais encontrados.`, 'success');
+                }
 
-                appState.playlist = channels;
+                // Ordenar a lista completa
+                appState.playlist.sort((a, b) => a.name.localeCompare(b.name));
+
+                appState.currentIndex = -1; // Reseta o índice atual
+                appState.currentChannel = null;
                 updatePlaylistUI(sourceName);
-                showToast(`Lista carregada: ${channels.length} canais encontrados.`, 'success');
             } catch (error) {
                 showToast(`Erro ao processar lista: ${error.message}`, 'error');
             }
@@ -934,10 +1013,8 @@
         function updatePlaylistUI(sourceName) {
             elements.channelCount.textContent = `${appState.playlist.length} canais`;
             elements.playlistStatus.textContent = sourceName;
-            
-            // Atualizar categorias
             updateCategories();
-            renderChannelsList();
+            renderChannelsList(true); // Renderiza e toca o primeiro canal da nova lista
         }
 
         function updateCategories() {
@@ -978,6 +1055,14 @@
 
             // Aplicar filtro de categoria e busca
             let filteredChannels = appState.playlist;
+
+            if (appState.currentCategory === 'favorites') {
+                // Funcionalidade de favoritos ainda não implementada
+                filteredChannels = [];
+            } else if (appState.currentCategory !== 'all') {
+                filteredChannels = filteredChannels.filter(channel => 
+                    channel.group === appState.currentCategory);
+            }
 
             // Aplicar filtro de busca
             if (appState.searchTerm) {
@@ -1021,7 +1106,10 @@
                         <div class="channel-group">${channel.group}</div>
                     </div>
                 `;
-                channelElement.addEventListener('click', () => playChannel(originalIndex));
+                channelElement.addEventListener('click', () => {
+                    playChannel(originalIndex);
+                    if (window.innerWidth <= 1024) toggleSidebar(); // Fecha o menu ao selecionar um canal
+                });
                 channelElement.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
                     toggleFavorite(channel.url);
@@ -1183,6 +1271,34 @@
             }
         }
 
+        function toggleSidebar() {
+            elements.sidebar.classList.toggle('open');
+            elements.sidebarOverlay.classList.toggle('open');
+        }
+
+        function handlePlayerClick() {
+            const playerContainer = elements.videoPlayer.parentElement;
+            
+            // Se os controles já estiverem visíveis, um clique os esconde.
+            if (playerContainer.classList.contains('controls-visible')) {
+                playerContainer.classList.remove('controls-visible');
+                clearTimeout(appState.controlsTimeout);
+                return;
+            }
+
+            // Mostra os controles
+            playerContainer.classList.add('controls-visible');
+
+            // Limpa qualquer timeout anterior
+            clearTimeout(appState.controlsTimeout);
+
+            // Esconde os controles após 4 segundos de inatividade
+            appState.controlsTimeout = setTimeout(() => {
+                playerContainer.classList.remove('controls-visible');
+            }, 4000);
+        }
+
+
         function handleVideoLoaded() {
             elements.streamStatus.textContent = 'Reproduzindo';
             // A atualização de stats agora é acionada por eventos mais específicos
@@ -1280,7 +1396,7 @@
                 if (!data.includes('#EXTM3U')) {
                     throw new Error('O arquivo não parece ser uma playlist M3U válida');
                 }
-                parsePlaylist(data, 'Lista Padrão (Brasil)');
+                parsePlaylist(data, 'Lista Padrão (Brasil)', false); // Não fusionar a primeira lista
             } catch (error) {
                 console.error('Erro ao carregar lista padrão:', error);
                 showToast(`Falha ao carregar lista: ${error.message}`, 'error');
@@ -1310,6 +1426,63 @@
                 case 'error': return 'exclamation-circle';
                 case 'warning': return 'exclamation-triangle';
                 default: return 'info-circle';
+            }
+        }
+
+        function showAddUrlModal() {
+            const modal = document.getElementById('addUrlModal');
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Adicionar Lista por URL</h2>
+                        <button class="modal-close" id="closeUrlModal">&times;</button>
+                    </div>
+                    <div class="settings-group">
+                        <p style="color: var(--gray); margin-bottom: 1rem;">Insira o URL de uma lista M3U ou M3U8.</p>
+                        <input type="text" id="playlistUrlInput" placeholder="https://exemplo.com/lista.m3u" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--darker); color: var(--light);">
+                    </div>
+                    <button class="btn btn-primary" id="confirmAddUrl" style="width: 100%;">
+                        <i class="fas fa-plus"></i> Adicionar e Carregar
+                    </button>
+                </div>
+            `;
+            modal.classList.add('active');
+
+            document.getElementById('closeUrlModal').addEventListener('click', () => modal.classList.remove('active'));
+            document.getElementById('confirmAddUrl').addEventListener('click', handleAddUrl);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        }
+
+        async function handleAddUrl() {
+            const urlInput = document.getElementById('playlistUrlInput');
+            const url = urlInput.value.trim();
+            if (!url) {
+                showToast('Por favor, insira um URL válido.', 'warning');
+                return;
+            }
+
+            const modal = document.getElementById('addUrlModal');
+            modal.classList.remove('active');
+            showToast('Carregando lista do URL...', 'info');
+
+            try {
+                // Usar um proxy CORS para evitar problemas de bloqueio de domínio cruzado
+                const proxyUrl = `https://cors-anywhere.herokuapp.com/${url}`;
+                const response = await fetch(proxyUrl);
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}`);
+                }
+                const data = await response.text();
+                if (!data.includes('#EXTM3U')) {
+                    throw new Error('O arquivo não parece ser uma playlist M3U válida');
+                }
+                parsePlaylist(data, new URL(url).hostname, true); // Fusionar a nova lista
+            } catch (error) {
+                showToast(`Falha ao carregar lista do URL: ${error.message}`, 'error');
             }
         }
     </script>
