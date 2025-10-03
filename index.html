@@ -1134,12 +1134,9 @@
                 });
 
                 appState.hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
-                    showToast(`Qualidade alterada para: ${appState.hls.levels[data.level].height}p`, 'info');
+                    updateStreamStats();
                 });
             }
-
-            // Inicializar MediaRecorder para gravação
-            initializeMediaRecorder();
         }
 
         function initializeMediaRecorder() {
@@ -1299,29 +1296,29 @@
             appState.categories.add('all'); // Categoria "Todos"
             appState.categories.add('favorites'); // Categoria "Favoritos"
 
-            const isMovieOrSeries = (group) => {
-                const lowerGroup = group.toLowerCase();
-                return lowerGroup.includes('filme') || lowerGroup.includes('movie') || lowerGroup.includes('vod') || lowerGroup.includes('série') || lowerGroup.includes('series');
-            };
+            const relevantChannels = appState.playlist.filter(channel => isChannelInCurrentTab(channel));
 
-            const relevantChannels = appState.playlist.filter(channel => {
-                const group = channel.group || '';
-                if (appState.currentTab === 'live') {
-                    return !isMovieOrSeries(group);
-                }
-                if (appState.currentTab === 'movies') {
-                    return group.toLowerCase().includes('filme') || group.toLowerCase().includes('movie');
-                }
-                return group.toLowerCase().includes('série') || group.toLowerCase().includes('series');
-            });
-
-            relevantChannels.forEach(channel => {
-                if (channel.group && !isMovieOrSeries(channel.group)) {
+            if (appState.currentTab === 'live') {
+                relevantChannels.forEach(channel => {
+                    if (channel.group) {
+                        appState.categories.add(channel.group);
+                    }
+                });
+            } else {
+                // Para Filmes e Séries, as categorias são os próprios grupos
+                relevantChannels.forEach(channel => {
+                    if (channel.group) {
+                        appState.categories.add(channel.group);
+                    }
+                });
+            }
+            renderCategoryFilters();
+            // Código antigo que foi removido para simplificação
+            /* relevantChannels.forEach(channel => {
+                if (channel.group && !isMovieOrSeries(channel.group)) { // Esta lógica era falha para VOD
                     appState.categories.add(channel.group);
                 }
-            });
-
-            renderCategoryFilters();
+            });*/
         }
 
         function renderCategoryFilters() {
@@ -1339,6 +1336,11 @@
                 });
                 elements.categoryFilters.appendChild(filter);
             });
+
+            // Após renderizar os filtros, renderiza a lista de canais
+            renderChannelsList(true); // O 'true' indica que é a primeira renderização após a mudança de categoria
+            document.addEventListener('DOMContentLoaded', () => {
+            });
         }
 
         function switchTab(tabName) {
@@ -1352,13 +1354,11 @@
 
             // Re-renderizar a lista
             updateCategories();
-            renderChannelsList();
+            // A chamada para renderChannelsList agora é feita dentro de updateCategories
         }
 
-        function renderChannelsList() {
+        function renderChannelsList(playFirstItem = false) {
             elements.channelsList.innerHTML = '';
-
-            const isMovieOrSeries = (group) => group.toLowerCase().includes('filme') || group.toLowerCase().includes('movie') || group.toLowerCase().includes('vod') || group.toLowerCase().includes('série') || group.toLowerCase().includes('series');
 
             // Filtrar por aba (Live, Filmes, Séries)
             let filteredChannels = appState.playlist.filter(channel => isChannelInCurrentTab(channel));
@@ -1420,18 +1420,24 @@
                 });
                 elements.channelsList.appendChild(channelElement);
             });
+
+            // Se houver canais na lista filtrada e a flag for verdadeira, toca o primeiro
+            if (playFirstItem && filteredChannels.length > 0) {
+                const firstChannelOriginalIndex = appState.playlist.findIndex(c => c.url === filteredChannels[0].url);
+                playChannel(firstChannelOriginalIndex);
+            }
         }
 
         function isChannelInCurrentTab(channel) {
             const group = (channel.group || '').toLowerCase();
-            const isVOD = group.includes('filme') || group.includes('movie') || group.includes('vod');
+            const isMovie = group.includes('filme') || group.includes('movie') || group.includes('vod');
             const isSeries = group.includes('série') || group.includes('series');
 
             switch (appState.currentTab) {
                 case 'live':
-                    return !isVOD && !isSeries;
+                    return !isMovie && !isSeries;
                 case 'movies':
-                    return isVOD;
+                    return isMovie && !isSeries; // Mostra filmes, mas não séries
                 case 'series':
                     return isSeries;
             }
@@ -1585,7 +1591,7 @@
 
         function handleVideoLoaded() {
             elements.streamStatus.textContent = 'Reproduzindo';
-            updateStreamStats();
+            // A atualização de stats agora é acionada por eventos mais específicos
         }
 
         function handleVideoWaiting() {
@@ -1595,6 +1601,7 @@
         function handleVideoPlaying() {
             elements.streamStatus.textContent = 'Reproduzindo';
             elements.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            updateStreamStats();
         }
 
         function handleVideoError() {
@@ -1603,6 +1610,7 @@
         }
 
         function handleTimeUpdate() {
+            updateStreamStats(); // Atualiza estatísticas periodicamente
             // Simulação de legendas
             if (appState.autoSubtitles && elements.videoPlayer.currentTime % 10 < 0.5) {
                 showSubtitle("Esta é uma legenda de demonstração");
@@ -1854,13 +1862,27 @@
         }
 
         function updateStreamStats() {
-            // Simular atualização de estatísticas (em app real, isso viria do player)
-            const qualities = ['SD', 'HD', 'FHD', '4K'];
-            const randomQuality = qualities[Math.floor(Math.random() * qualities.length)];
+            let qualityText = '--';
+            const video = elements.videoPlayer;
+
+            if (appState.hls && appState.hls.currentLevel !== -1) {
+                const level = appState.hls.levels[appState.hls.currentLevel];
+                if (level && level.height) {
+                    qualityText = `${level.height}p`;
+                }
+            } else if (video.videoHeight > 0) {
+                const height = video.videoHeight;
+                if (height >= 2160) qualityText = '4K';
+                else if (height >= 1080) qualityText = 'FHD';
+                else if (height >= 720) qualityText = 'HD';
+                else if (height > 0) qualityText = 'SD';
+            }
+
+            // Simulação de outros dados
             const randomLatency = Math.floor(Math.random() * 200) + 50;
             const randomBuffer = Math.floor(Math.random() * 20) + 5;
 
-            elements.streamQuality.textContent = `Qualidade: ${randomQuality}`;
+            elements.streamQuality.textContent = `Qualidade: ${qualityText}`;
             elements.streamLatency.textContent = `${randomLatency} ms`;
             elements.bufferStatus.textContent = `Buffer: ${randomBuffer}s`;
         }
