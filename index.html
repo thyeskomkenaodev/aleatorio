@@ -179,21 +179,6 @@
             border-color: var(--primary);
         }
 
-        .main-tabs {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid var(--glass-border);
-        }
-
-        .main-tab {
-            padding: 0.75rem 1.5rem;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: all 0.3s ease;
-        }
-        .main-tab.active { border-bottom-color: var(--primary); color: var(--primary); }
-
         .playlist-info {
             background: rgba(15, 23, 42, 0.6);
             border-radius: 12px;
@@ -381,33 +366,6 @@
             max-width: 80%;
         }
 
-        .karaoke-display {
-            position: absolute;
-            bottom: 150px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 1rem 2rem;
-            border-radius: 12px;
-            font-size: 1.5rem;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        .karaoke-line {
-            margin: 0.5rem 0;
-        }
-
-        .karaoke-word {
-            transition: color 0.3s ease;
-        }
-
-        .karaoke-word.active {
-            color: var(--accent);
-            text-shadow: 0 0 10px var(--accent);
-        }
-
         .stats-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -455,38 +413,6 @@
             padding: 1rem;
             max-height: 120px;
             overflow: hidden;
-        }
-
-        .epg-timeline {
-            display: flex;
-            gap: 1rem;
-            overflow-x: auto;
-            padding-bottom: 0.5rem;
-        }
-
-        .epg-channel {
-            display: flex;
-            flex-direction: column;
-            min-width: 200px;
-        }
-
-        .epg-channel-name {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        .epg-program {
-            background: rgba(99, 102, 241, 0.3);
-            border-radius: 6px;
-            padding: 0.5rem;
-            font-size: 0.8rem;
-            border-left: 3px solid var(--primary);
-        }
-
-        .epg-program.current {
-            background: rgba(16, 185, 129, 0.3);
-            border-left-color: var(--secondary);
         }
 
         /* Settings Modal */
@@ -592,37 +518,6 @@
 
         input:checked + .toggle-slider:before {
             transform: translateX(26px);
-        }
-
-        /* URL Input Modal */
-        .url-modal {
-            display: none;
-        }
-
-        .url-modal.active {
-            display: flex;
-        }
-
-        .url-input {
-            width: 100%;
-            padding: 1rem;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
-            color: var(--light);
-            margin-bottom: 1rem;
-            font-size: 1rem;
-        }
-
-        .url-input:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 1rem;
-            justify-content: flex-end;
         }
 
         /* Recording List */
@@ -759,15 +654,6 @@
                 <button class="btn" id="loadFileBtn">
                     <i class="fas fa-folder-open"></i> Carregar Lista
                 </button>
-                <button class="btn" id="loadUrlBtn">
-                    <i class="fas fa-link"></i> Carregar URL
-                </button>
-                <button class="btn" id="favoritesBtn">
-                    <i class="fas fa-star"></i> Favoritos
-                </button>
-                <button class="btn btn-primary" id="settingsBtn">
-                    <i class="fas fa-cog"></i> Configurações
-                </button>
             </div>
         </header>
 
@@ -775,12 +661,6 @@
             <div class="search-box">
                 <i class="fas fa-search"></i>
                 <input type="text" id="searchInput" placeholder="Buscar canal...">
-            </div>
-
-            <div class="main-tabs">
-                <div class="main-tab active" id="tabLive">TV Ao Vivo</div>
-                <div class="main-tab" id="tabMovies">Filmes</div>
-                <div class="main-tab" id="tabSeries">Séries</div>
             </div>
 
             <div class="category-filters" id="categoryFilters">
@@ -825,14 +705,8 @@
                         <button class="control-btn" id="prevChannel">
                             <i class="fas fa-step-backward"></i>
                         </button>
-                        <button class="control-btn" id="recordBtn">
-                            <i class="fas fa-circle"></i>
-                        </button>
                         <button class="control-btn" id="playPauseBtn">
                             <i class="fas fa-play"></i>
-                        </button>
-                        <button class="control-btn" id="karaokeBtn">
-                            <i class="fas fa-music"></i>
                         </button>
                         <button class="control-btn" id="nextChannel">
                             <i class="fas fa-step-forward"></i>
@@ -845,12 +719,6 @@
                 
                 <!-- Subtitle Track -->
                 <div class="subtitle-track" id="subtitleTrack" style="display: none;"></div>
-                
-                <!-- Karaoke Display -->
-                <div class="karaoke-display" id="karaokeDisplay" style="display: none;">
-                    <div class="karaoke-line" id="karaokeLine1"></div>
-                    <div class="karaoke-line" id="karaokeLine2"></div>
-                </div>
             </div>
 
             <div class="stats-container">
@@ -875,71 +743,8 @@
 
         <!-- EPG Timeline -->
         <section class="epg-container">
-            <div class="epg-timeline" id="epgTimeline">
-                <!-- EPG data will be populated here -->
-            </div>
+            <!-- Conteúdo EPG removido para simplificação -->
         </section>
-    </div>
-
-    <!-- Settings Modal -->
-    <div class="modal" id="settingsModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Configurações</h2>
-                <button class="modal-close" id="modalClose">&times;</button>
-            </div>
-            
-            <div class="settings-group">
-                <h3>Player</h3>
-                <div class="setting-item">
-                    <span>Qualidade Automática</span>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="autoQuality" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-                <div class="setting-item">
-                    <span>Modo Cinema</span>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="cinemaMode">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="settings-group">
-                <h3>Gravações</h3>
-                <div class="recordings-list" id="recordingsList">
-                    <!-- Recordings will be listed here -->
-                </div>
-            </div>
-
-            <div class="settings-group">
-                <h3>Legendas</h3>
-                <div class="setting-item">
-                    <span>Legendas Automáticas</span>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="autoSubtitles">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- URL Input Modal -->
-    <div class="modal url-modal" id="urlModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Carregar Lista por URL</h2>
-                <button class="modal-close" id="urlModalClose">&times;</button>
-            </div>
-            <input type="text" class="url-input" id="urlInput" placeholder="Cole a URL da lista IPTV aqui...">
-            <div class="modal-actions">
-                <button class="btn" id="urlCancelBtn">Cancelar</button>
-                <button class="btn btn-primary" id="urlLoadBtn">Carregar</button>
-            </div>
-        </div>
     </div>
 
     <div class="toast-container" id="toastContainer"></div>
@@ -957,27 +762,17 @@
             hls: null,
             dash: null,
             isPlaying: false,
-            isRecording: false,
-            isKaraokeMode: false,
             searchTerm: '',
             currentCategory: 'all',
-            currentTab: 'live', // 'live', 'movies', 'series'
             favorites: new Set(),
-            recordings: [],
             categories: new Set(),
-            autoQuality: true,
-            cinemaMode: false,
-            autoSubtitles: false,
-            mediaRecorder: null,
-            recordedChunks: [],
-            db: null,
         };
 
         // Elementos DOM
         const elements = {
             videoPlayer: document.getElementById('videoPlayer'),
             channelsList: document.getElementById('channelsList'),
-            searchInput: document.getElementById('searchInput'),
+            searchInput: document.querySelector('.search-box input'),
             categoryFilters: document.getElementById('categoryFilters'),
             channelCount: document.getElementById('channelCount'),
             playlistStatus: document.getElementById('playlistStatus'),
@@ -991,32 +786,12 @@
             playPauseBtn: document.getElementById('playPauseBtn'),
             prevChannel: document.getElementById('prevChannel'),
             nextChannel: document.getElementById('nextChannel'),
-            recordBtn: document.getElementById('recordBtn'),
-            karaokeBtn: document.getElementById('karaokeBtn'),
             fullscreenBtn: document.getElementById('fullscreenBtn'),
             loadFileBtn: document.getElementById('loadFileBtn'),
-            loadUrlBtn: document.getElementById('loadUrlBtn'),
-            favoritesBtn: document.getElementById('favoritesBtn'),
-            settingsBtn: document.getElementById('settingsBtn'),
             fileInput: document.getElementById('fileInput'),
             toastContainer: document.getElementById('toastContainer'),
-            settingsModal: document.getElementById('settingsModal'),
-            modalClose: document.getElementById('modalClose'),
             recordingIndicator: document.getElementById('recordingIndicator'),
             subtitleTrack: document.getElementById('subtitleTrack'),
-            karaokeDisplay: document.getElementById('karaokeDisplay'),
-            karaokeLine1: document.getElementById('karaokeLine1'),
-            karaokeLine2: document.getElementById('karaokeLine2'),
-            epgTimeline: document.getElementById('epgTimeline'),
-            recordingsList: document.getElementById('recordingsList'),
-            urlModal: document.getElementById('urlModal'),
-            urlInput: document.getElementById('urlInput'),
-            urlModalClose: document.getElementById('urlModalClose'),
-            urlCancelBtn: document.getElementById('urlCancelBtn'),
-            urlLoadBtn: document.getElementById('urlLoadBtn'),
-            tabLive: document.getElementById('tabLive'),
-            tabMovies: document.getElementById('tabMovies'),
-            tabSeries: document.getElementById('tabSeries'),
         };
 
         // Inicialização
@@ -1025,54 +800,22 @@
         });
 
         async function initApp() {
-            await initDatabase();
             setupEventListeners();
             initializePlayer();
-            loadFavorites();
-            loadRecordings();
-            loadSamplePlaylist(); // Mover o carregamento da lista para o final da inicialização
+            loadSamplePlaylist();
             showToast('NeoStream Pro Inicializado', 'success');            
-        }
-
-        async function initDatabase() {
-            appState.db = await idb.openDB('NeoStreamDB', 1, {
-                upgrade(db) {
-                    db.createObjectStore('favorites');
-                    db.createObjectStore('recordings');
-                    db.createObjectStore('playlists', { keyPath: 'url' });
-                    db.createObjectStore('settings');
-                }
-            });
         }
 
         function setupEventListeners() {
             // Controles de arquivo
             elements.loadFileBtn.addEventListener('click', () => elements.fileInput.click());
             elements.fileInput.addEventListener('change', handleFileUpload);
-            elements.loadUrlBtn.addEventListener('click', showUrlModal);
-
-            // Controles de URL Modal
-            elements.urlModalClose.addEventListener('click', hideUrlModal);
-            elements.urlCancelBtn.addEventListener('click', hideUrlModal);
-            elements.urlLoadBtn.addEventListener('click', loadFromUrl);
-            elements.urlInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    // Prevenir que o formulário seja submetido se estiver dentro de um
-                    e.preventDefault();
-                    loadFromUrl();
-                }
-            });
 
             // Controles de player
             elements.playPauseBtn.addEventListener('click', togglePlayPause);
             elements.prevChannel.addEventListener('click', playPreviousChannel);
             elements.nextChannel.addEventListener('click', playNextChannel);
-            elements.recordBtn.addEventListener('click', toggleRecording);
-            elements.karaokeBtn.addEventListener('click', toggleKaraokeMode);
             elements.fullscreenBtn.addEventListener('click', toggleFullscreen);
-            elements.favoritesBtn.addEventListener('click', showFavorites);
-            elements.settingsBtn.addEventListener('click', showSettings);
-            elements.modalClose.addEventListener('click', hideSettings);
 
             // Busca e filtros
             elements.searchInput.addEventListener('input', handleSearch);
@@ -1086,16 +829,6 @@
             elements.videoPlayer.addEventListener('playing', handleVideoPlaying);
             elements.videoPlayer.addEventListener('error', handleVideoError);
             elements.videoPlayer.addEventListener('timeupdate', handleTimeUpdate);
-
-            // Configurações
-            document.getElementById('autoQuality').addEventListener('change', handleSettingsChange);
-            document.getElementById('cinemaMode').addEventListener('change', handleSettingsChange);
-            document.getElementById('autoSubtitles').addEventListener('change', handleSettingsChange);
-
-            // Abas
-            elements.tabLive.addEventListener('click', () => switchTab('live'));
-            elements.tabMovies.addEventListener('click', () => switchTab('movies'));
-            elements.tabSeries.addEventListener('click', () => switchTab('series'));
         }
 
         function initializePlayer() {
@@ -1123,64 +856,6 @@
             }
         }
 
-        function initializeMediaRecorder() {
-            // MediaRecorder será configurado quando necessário
-        }
-
-        // FUNÇÃO PARA MOSTRAR MODAL DE URL
-        function showUrlModal() {
-            elements.urlModal.classList.add('active');
-            elements.urlInput.focus();
-        }
-
-        function hideUrlModal() {
-            elements.urlModal.classList.remove('active');
-            elements.urlInput.value = '';
-        }
-
-        // FUNÇÃO PARA CARREGAR LISTA POR URL - COMPLETA
-        async function loadFromUrl() {
-            const url = elements.urlInput.value.trim();
-            
-            if (!url) {
-                showToast('Por favor, insira uma URL válida', 'error');
-                return;
-            }
-
-            // Validar URL
-            try {
-                new URL(url);
-            } catch (e) {
-                showToast('URL inválida. Por favor, verifique o formato.', 'error');
-                return;
-            }
-
-            showToast('Carregando lista da URL...', 'warning');
-            
-            try {
-                const response = await fetch(url);
-                
-                if (!response.ok) {
-                    throw new Error(`Erro HTTP: ${response.status}`);
-                }
-                
-                const data = await response.text();
-                
-                if (!data.includes('#EXTM3U')) {
-                    throw new Error('O arquivo não parece ser uma playlist M3U válida');
-                }
-                
-                parsePlaylist(data, 'Lista Remota');
-                savePlaylist(url, data);
-                hideUrlModal();
-                showToast('Lista carregada com sucesso!', 'success');
-                
-            } catch (error) {
-                console.error('Erro ao carregar URL:', error);
-                showToast(`Erro ao carregar: ${error.message}`, 'error');
-            }
-        }
-
         function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1188,20 +863,11 @@
             const reader = new FileReader();
             reader.onload = (e) => {
                 parsePlaylist(e.target.result, file.name);
-                // Gerar uma "URL" local para salvar a playlist de arquivo
-                const fileUrl = `file://${file.name}`;
-                savePlaylist(fileUrl, e.target.result);
             };
             reader.onerror = () => {
                 showToast('Erro ao ler o arquivo', 'error');
             };
             reader.readAsText(file);
-        }
-
-        async function savePlaylist(url, content) {
-            if (!appState.db) return;
-            const playlistData = { url, content, lastAccessed: new Date() };
-            await appState.db.put('playlists', playlistData);
         }
 
         function parsePlaylist(data, sourceName) {
@@ -1226,19 +892,8 @@
                     }
                 }
 
-                // Ordenação personalizada: filmes por último
-                channels.sort((a, b) => {
-                    const groupA = (a.group || '').toLowerCase();
-                    const groupB = (b.group || '').toLowerCase();
-                    const isAMovie = groupA.includes('filme') || groupA.includes('movie');
-                    const isBMovie = groupB.includes('filme') || groupB.includes('movie');
-
-                    if (isAMovie && !isBMovie) return 1;  // Filmes (A) vão para o fim
-                    if (!isAMovie && isBMovie) return -1; // Filmes (B) vão para o fim
-
-                    // Para os demais, ordena por nome
-                    return a.name.localeCompare(b.name);
-                });
+                // Ordenar por nome
+                channels.sort((a, b) => a.name.localeCompare(b.name));
 
                 appState.playlist = channels;
                 updatePlaylistUI(sourceName);
@@ -1289,9 +944,6 @@
             appState.categories.clear();
             appState.categories.add('all'); // Categoria "Todos"
             appState.categories.add('favorites'); // Categoria "Favoritos"
-
-            // Simplificado: Adiciona todas as categorias da lista principal,
-            // a filtragem por aba será feita apenas na renderização da lista.
             appState.playlist.forEach(channel => {
                 if (channel.group) {
                     appState.categories.add(channel.group);
@@ -1321,36 +973,11 @@
             renderChannelsList();
         }
 
-        function switchTab(tabName) {
-            appState.currentTab = tabName;
-            appState.currentCategory = 'all'; // Resetar categoria ao trocar de aba
-
-            // Atualizar UI das abas
-            elements.tabLive.classList.toggle('active', tabName === 'live');
-            elements.tabMovies.classList.toggle('active', tabName === 'movies');
-            elements.tabSeries.classList.toggle('active', tabName === 'series');
-
-            // Re-renderizar a lista
-            updateCategories();
-            // A chamada para renderChannelsList agora é feita dentro de updateCategories
-        }
-
         function renderChannelsList(playFirstItem = false) {
             elements.channelsList.innerHTML = '';
 
-            // Filtrar por aba (Live, Filmes, Séries)
-            let filteredChannels = appState.playlist.filter(channel => isChannelInCurrentTab(channel));
-
-            // Aplicar filtro de categoria
-            if (appState.currentCategory === 'favorites') {
-                filteredChannels = filteredChannels.filter(channel => 
-                    appState.favorites.has(channel.url)
-                );
-            } else if (appState.currentCategory !== 'all') {
-                filteredChannels = filteredChannels.filter(channel =>
-                    channel.group === appState.currentCategory
-                );
-            }
+            // Aplicar filtro de categoria e busca
+            let filteredChannels = appState.playlist;
 
             // Aplicar filtro de busca
             if (appState.searchTerm) {
@@ -1360,19 +987,8 @@
                 );
             }
 
-            // Ordenação personalizada: filmes por último
-            filteredChannels.sort((a, b) => {
-                const groupA = (a.group || '').toLowerCase();
-                const groupB = (b.group || '').toLowerCase();
-                const isAMovie = groupA.includes('filme') || groupA.includes('movie');
-                const isBMovie = groupB.includes('filme') || groupB.includes('movie');
-
-                if (isAMovie && !isBMovie) return 1;  // Filmes (A) vão para o fim
-                if (!isAMovie && isBMovie) return -1; // Filmes (B) vão para o fim
-
-                // Para os demais, ordena por nome
-                return a.name.localeCompare(b.name);
-            });
+            // Ordenar por nome
+            filteredChannels.sort((a, b) => a.name.localeCompare(b.name));
 
             // Atualizar a lista de canais visíveis no estado da aplicação
             appState.viewablePlaylist = filteredChannels;
@@ -1420,21 +1036,7 @@
             }
         }
 
-        function isChannelInCurrentTab(channel) {
-            const group = (channel.group || '').toLowerCase();
-            const isMovie = group.includes('filme') || group.includes('movie');
-            const isSeries = group.includes('série') || group.includes('series');
-
-            switch (appState.currentTab) {
-                case 'live': // Para TV ao vivo, mostra tudo que NÃO é filme ou série
-                    return !isMovie && !isSeries;
-                case 'movies':
-                    return isMovie && !isSeries; // Mostra filmes, mas não séries
-                case 'series':
-                    return isSeries;
-            }
-            return false;
-        }
+        // ... (restante do código permanece, mas as funções complexas não serão mais chamadas da mesma forma)
 
         function playChannel(index) {
             if (index < 0 || index >= appState.playlist.length) return;
@@ -1603,13 +1205,6 @@
 
         function handleTimeUpdate() {
             updateStreamStats(); // Atualiza estatísticas periodicamente
-            // Simulação de legendas
-            if (appState.autoSubtitles && elements.videoPlayer.currentTime % 10 < 0.5) {
-                showSubtitle("Esta é uma legenda de demonstração");
-            }
-
-            // Simulação de EPG
-            updateEPG();
         }
 
         async function toggleRecording() {
@@ -1620,108 +1215,6 @@
             }
         }
 
-        async function startRecording() {
-            try {
-                const stream = await navigator.mediaDevices.getDisplayMedia({
-                    video: { mediaSource: 'screen' },
-                    audio: true
-                });
-
-                appState.mediaRecorder = new MediaRecorder(stream);
-                appState.recordedChunks = [];
-
-                appState.mediaRecorder.ondataavailable = (event) => {
-                    if (event.data.size > 0) {
-                        appState.recordedChunks.push(event.data);
-                    }
-                };
-
-                appState.mediaRecorder.onstop = async () => {
-                    const blob = new Blob(appState.recordedChunks, { type: 'video/webm' });
-                    await saveRecording(blob);
-                    stream.getTracks().forEach(track => track.stop());
-                };
-
-                appState.mediaRecorder.start();
-                appState.isRecording = true;
-                elements.recordBtn.classList.add('recording');
-                elements.recordingIndicator.style.display = 'flex';
-                showToast('Gravação iniciada', 'success');
-            } catch (error) {
-                showToast('Erro ao iniciar gravação: ' + error.message, 'error');
-            }
-        }
-
-        async function stopRecording() {
-            if (appState.mediaRecorder) {
-                appState.mediaRecorder.stop();
-                appState.isRecording = false;
-                elements.recordBtn.classList.remove('recording');
-                elements.recordingIndicator.style.display = 'none';
-                showToast('Gravação finalizada', 'success');
-            }
-        }
-
-        async function saveRecording(blob) {
-            const recording = {
-                id: Date.now(),
-                channel: appState.currentChannel?.name || 'Unknown',
-                timestamp: new Date().toLocaleString(),
-                blob: blob,
-                url: URL.createObjectURL(blob)
-            };
-
-            appState.recordings.push(recording);
-            await appState.db.put('recordings', recording, recording.id);
-            updateRecordingsList();
-        }
-
-        function updateRecordingsList() {
-            elements.recordingsList.innerHTML = appState.recordings.map(recording => `
-                <div class="recording-item">
-                    <div class="recording-info">
-                        <h4>${recording.channel}</h4>
-                        <span>${recording.timestamp}</span>
-                    </div>
-                    <div class="recording-actions">
-                        <button class="btn" onclick="playRecording(${recording.id})">
-                            <i class="fas fa-play"></i>
-                        </button>
-                        <button class="btn" onclick="downloadRecording(${recording.id})">
-                            <i class="fas fa-download"></i>
-                        </button>
-                        <button class="btn" onclick="deleteRecording(${recording.id})">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function toggleKaraokeMode() {
-            appState.isKaraokeMode = !appState.isKaraokeMode;
-            elements.karaokeDisplay.style.display = appState.isKaraokeMode ? 'block' : 'none';
-            elements.karaokeBtn.style.background = appState.isKaraokeMode ? 'var(--accent)' : '';
-            
-            if (appState.isKaraokeMode) {
-                startKaraokeDemo();
-                showToast('Modo Karaokê Ativado', 'success');
-            } else {
-                showToast('Modo Karaokê Desativado', 'info');
-            }
-        }
-
-        function startKaraokeDemo() {
-            // Simulação de letras de karaokê
-            const lyrics = [
-                "🎵 Esta é uma demonstração do modo karaokê 🎵",
-                "🎤 As letras sincronizadas aparecerão aqui 🎤"
-            ];
-
-            elements.karaokeLine1.innerHTML = lyrics[0];
-            elements.karaokeLine2.innerHTML = lyrics[1];
-        }
-
         function showSubtitle(text) {
             elements.subtitleTrack.textContent = text;
             elements.subtitleTrack.style.display = 'block';
@@ -1730,115 +1223,10 @@
             }, 4000);
         }
 
-        function updateEPG() {
-            // Simulação de dados EPG
-            elements.epgTimeline.innerHTML = `
-                <div class="epg-channel">
-                    <div class="epg-channel-name">Canal Atual</div>
-                    <div class="epg-program current">
-                        <strong>Programa Atual</strong><br>
-                        <span>Agora - 23:00</span>
-                    </div>
-                </div>
-                <div class="epg-channel">
-                    <div class="epg-channel-name">Próximo</div>
-                    <div class="epg-program">
-                        <strong>Próximo Programa</strong><br>
-                        <span>23:00 - 00:00</span>
-                    </div>
-                </div>
-            `;
-        }
-
-        async function loadFavorites() {
-            const favorites = await appState.db.get('favorites', 'channels');
-            if (favorites) {
-                appState.favorites = new Set(favorites);
-            }
-        }
-
-        async function saveFavorites() {
-            await appState.db.put('favorites', Array.from(appState.favorites), 'channels');
-        }
-
         async function toggleFavorite(channelUrl) {
-            if (appState.favorites.has(channelUrl)) {
-                appState.favorites.delete(channelUrl);
-                showToast('Removido dos favoritos', 'info');
-            } else {
-                appState.favorites.add(channelUrl);
-                showToast('Adicionado aos favoritos', 'success');
-            }
-            await saveFavorites();
+            // Funcionalidade de favoritos simplificada/removida por enquanto
+            showToast('Funcionalidade de favoritos desativada nesta versão.', 'info');
             renderChannelsList();
-        }
-
-        function showFavorites() {
-            appState.currentCategory = 'favorites';
-            renderCategoryFilters();
-            renderChannelsList();
-            showToast('Mostrando favoritos', 'info');
-        }
-
-        function showSettings() {
-            elements.settingsModal.classList.add('active');
-        }
-
-        function hideSettings() {
-            elements.settingsModal.classList.remove('active');
-        }
-
-        function handleSettingsChange(event) {
-            const setting = event.target.id;
-            const value = event.target.checked;
-
-            switch(setting) {
-                case 'autoQuality':
-                    appState.autoQuality = value;
-                    break;
-                case 'cinemaMode':
-                    appState.cinemaMode = value;
-                    document.body.classList.toggle('cinema-mode', value);
-                    break;
-                case 'autoSubtitles':
-                    appState.autoSubtitles = value;
-                    break;
-            }
-
-            showToast('Configuração atualizada', 'success');
-        }
-
-        async function loadRecordings() {
-            const recordings = await appState.db.getAll('recordings');
-            appState.recordings = recordings || [];
-            updateRecordingsList();
-        }
-
-        // Funções de utilidade adicionais
-        function playRecording(id) {
-            const recording = appState.recordings.find(r => r.id === id);
-            if (recording) {
-                elements.videoPlayer.src = recording.url;
-                elements.videoPlayer.play();
-                showToast('Reproduzindo gravação', 'info');
-            }
-        }
-
-        function downloadRecording(id) {
-            const recording = appState.recordings.find(r => r.id === id);
-            if (recording) {
-                const a = document.createElement('a');
-                a.href = recording.url;
-                a.download = `gravacao-${recording.channel}-${recording.timestamp}.webm`;
-                a.click();
-            }
-        }
-
-        function deleteRecording(id) {
-            appState.recordings = appState.recordings.filter(r => r.id !== id);
-            appState.db.delete('recordings', id);
-            updateRecordingsList();
-            showToast('Gravação excluída', 'info');
         }
 
         function handleStreamError(error) {
@@ -1926,4 +1314,5 @@
         }
     </script>
 </body>
+
 </html>
