@@ -971,7 +971,6 @@
             mediaRecorder: null,
             recordedChunks: [],
             db: null,
-            channelScores: new Map() // Armazena a pontuação de cada canal
         };
 
         // Elementos DOM
@@ -1029,22 +1028,19 @@
             await initDatabase();
             setupEventListeners();
             initializePlayer();
-            await loadChannelScores();
             loadFavorites();
             loadRecordings();
+            loadSamplePlaylist(); // Mover o carregamento da lista para o final da inicialização
             showToast('NeoStream Pro Inicializado', 'success');            
         }
 
         async function initDatabase() {
-            // Carregar lista de exemplo para demonstração
-            loadSamplePlaylist();
             appState.db = await idb.openDB('NeoStreamDB', 1, {
                 upgrade(db) {
                     db.createObjectStore('favorites');
                     db.createObjectStore('recordings');
                     db.createObjectStore('playlists', { keyPath: 'url' });
                     db.createObjectStore('settings');
-                    db.createObjectStore('channelScores');
                 }
             });
         }
@@ -1230,45 +1226,23 @@
                     }
                 }
 
-                // Lógica de ordenação personalizada:
-                // 1. Infantil no topo
-                // 2. Globo no final
-                // 3. Outros canais ordenados por pontuação (estabilidade)
+                // Ordenação personalizada: filmes por último
                 channels.sort((a, b) => {
                     const groupA = (a.group || '').toLowerCase();
                     const groupB = (b.group || '').toLowerCase();
+                    const isAMovie = groupA.includes('filme') || groupA.includes('movie');
+                    const isBMovie = groupB.includes('filme') || groupB.includes('movie');
 
-                    const isAInfantil = groupA.includes('infantil');
-                    const isBInfantil = groupB.includes('infantil');
-                    const isAGlobo = groupA.includes('globo');
-                    const isBGlobo = groupB.includes('globo');
+                    if (isAMovie && !isBMovie) return 1;  // Filmes (A) vão para o fim
+                    if (!isAMovie && isBMovie) return -1; // Filmes (B) vão para o fim
 
-                    if (isAInfantil && !isBInfantil) return -1; // Infantil A vem primeiro
-                    if (!isAInfantil && isBInfantil) return 1;  // Infantil B vem primeiro
-
-                    if (isAGlobo && !isBGlobo) return 1;   // Globo A vai para o fim
-                    if (!isAGlobo && isBGlobo) return -1;  // Globo B vai para o fim
-
-                    // Para canais que não são nem Infantil nem Globo, ordena por pontuação
-                    const scoreA = appState.channelScores.get(a.url) || 0;
-                    const scoreB = appState.channelScores.get(b.url) || 0;
-                    if (scoreB !== scoreA) return scoreB - scoreA;
-
-                    return a.name.localeCompare(b.name); // desempate por nome
+                    // Para os demais, ordena por nome
+                    return a.name.localeCompare(b.name);
                 });
 
                 appState.playlist = channels;
                 updatePlaylistUI(sourceName);
                 showToast(`Lista carregada: ${channels.length} canais encontrados.`, 'success');
-
-                // Se esta for a lista padrão, tenta selecionar a categoria "Infantil"
-                if (sourceName.includes('Padrão')) {
-                    const infantilCategory = Array.from(appState.categories).find(cat => cat.toLowerCase().includes('infantil'));
-                    if (infantilCategory) {
-                        appState.currentCategory = infantilCategory;
-                        updatePlaylistUI(sourceName); // Re-renderiza a UI com a categoria selecionada
-                    }
-                }
             } catch (error) {
                 showToast(`Erro ao processar lista: ${error.message}`, 'error');
             }
@@ -1316,29 +1290,14 @@
             appState.categories.add('all'); // Categoria "Todos"
             appState.categories.add('favorites'); // Categoria "Favoritos"
 
-            const relevantChannels = appState.playlist.filter(channel => isChannelInCurrentTab(channel));
-
-            if (appState.currentTab === 'live') {
-                relevantChannels.forEach(channel => {
-                    if (channel.group) {
-                        appState.categories.add(channel.group);
-                    }
-                });
-            } else {
-                // Para Filmes e Séries, as categorias são os próprios grupos
-                relevantChannels.forEach(channel => {
-                    if (channel.group) {
-                        appState.categories.add(channel.group);
-                    }
-                });
-            }
-            renderCategoryFilters();
-            // Código antigo que foi removido para simplificação
-            /* relevantChannels.forEach(channel => {
-                if (channel.group && !isMovieOrSeries(channel.group)) { // Esta lógica era falha para VOD
+            // Simplificado: Adiciona todas as categorias da lista principal,
+            // a filtragem por aba será feita apenas na renderização da lista.
+            appState.playlist.forEach(channel => {
+                if (channel.group) {
                     appState.categories.add(channel.group);
                 }
-            });*/
+            });
+            renderCategoryFilters();
         }
 
         function renderCategoryFilters() {
@@ -1401,8 +1360,19 @@
                 );
             }
 
-            // Ordenar por nome
-            filteredChannels.sort((a, b) => a.name.localeCompare(b.name));
+            // Ordenação personalizada: filmes por último
+            filteredChannels.sort((a, b) => {
+                const groupA = (a.group || '').toLowerCase();
+                const groupB = (b.group || '').toLowerCase();
+                const isAMovie = groupA.includes('filme') || groupA.includes('movie');
+                const isBMovie = groupB.includes('filme') || groupB.includes('movie');
+
+                if (isAMovie && !isBMovie) return 1;  // Filmes (A) vão para o fim
+                if (!isAMovie && isBMovie) return -1; // Filmes (B) vão para o fim
+
+                // Para os demais, ordena por nome
+                return a.name.localeCompare(b.name);
+            });
 
             // Atualizar a lista de canais visíveis no estado da aplicação
             appState.viewablePlaylist = filteredChannels;
@@ -1452,11 +1422,11 @@
 
         function isChannelInCurrentTab(channel) {
             const group = (channel.group || '').toLowerCase();
-            const isMovie = group.includes('filme') || group.includes('movie') || group.includes('vod');
+            const isMovie = group.includes('filme') || group.includes('movie');
             const isSeries = group.includes('série') || group.includes('series');
 
             switch (appState.currentTab) {
-                case 'live':
+                case 'live': // Para TV ao vivo, mostra tudo que NÃO é filme ou série
                     return !isMovie && !isSeries;
                 case 'movies':
                     return isMovie && !isSeries; // Mostra filmes, mas não séries
@@ -1474,7 +1444,6 @@
             appState.currentChannel = channel;
 
             // Atualizar UI
-            updateChannelScore(channel.url, 0); // Não penaliza nem bonifica ao tentar carregar
             elements.nowPlaying.textContent = channel.name;
             elements.currentChannelInfo.textContent = channel.name;
             elements.streamStatus.textContent = 'Conectando...';
@@ -1623,7 +1592,6 @@
 
         function handleVideoPlaying() {
             elements.streamStatus.textContent = 'Reproduzindo';
-            updateChannelScore(appState.currentChannel.url, 1); // Bonifica canal que funciona
             elements.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
             updateStreamStats();
         }
@@ -1631,7 +1599,6 @@
         function handleVideoError() {
             elements.streamStatus.textContent = 'Erro';
             showToast('Erro na reprodução do vídeo', 'error');
-            updateChannelScore(appState.currentChannel.url, -1); // Penaliza canal que falha
         }
 
         function handleTimeUpdate() {
@@ -1874,22 +1841,6 @@
             showToast('Gravação excluída', 'info');
         }
 
-        async function updateChannelScore(channelUrl, scoreChange) {
-            if (!channelUrl) return;
-            const currentScore = appState.channelScores.get(channelUrl) || 0;
-            const newScore = currentScore + scoreChange;
-            appState.channelScores.set(channelUrl, newScore);
-            
-            // Salvar no IndexedDB para persistência
-            await appState.db.put('channelScores', newScore, channelUrl);
-        }
-
-        async function loadChannelScores() {
-            const scores = await appState.db.getAll('channelScores');
-            const keys = await appState.db.getAllKeys('channelScores');
-            keys.forEach((key, index) => appState.channelScores.set(key, scores[index]));
-        }
-
         function handleStreamError(error) {
             console.error('Stream Error:', error);
             showToast('Erro no stream. Tentando recuperar...', 'error');
@@ -1932,10 +1883,8 @@
         async function loadSamplePlaylist() {
             const defaultUrl = 'https://raw.githubusercontent.com/PaulinhoProjects/IPTV-BR/main/Paulo.m3u';
             showToast('Carregando lista padrão...', 'info');
-            const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(defaultUrl);
             try {
-                // Usando um proxy para garantir compatibilidade em dispositivos móveis (CORS)
-                const response = await fetch(proxyUrl);
+                const response = await fetch(defaultUrl);
                 if (!response.ok) {
                     throw new Error(`Erro HTTP: ${response.status}`);
                 }
