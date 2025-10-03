@@ -1932,10 +1932,10 @@
         async function loadSamplePlaylist() {
             const defaultUrl = 'https://raw.githubusercontent.com/PaulinhoProjects/IPTV-BR/main/Paulo.m3u';
             showToast('Carregando lista padrão...', 'info');
+            const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(defaultUrl);
             try {
-                // Usar um proxy para evitar problemas de CORS, se necessário.
-                // Ex: 'https://cors-anywhere.herokuapp.com/' + defaultUrl
-                const response = await fetch(defaultUrl);
+                // Usando um proxy para garantir compatibilidade em dispositivos móveis (CORS)
+                const response = await fetch(proxyUrl);
                 if (!response.ok) {
                     throw new Error(`Erro HTTP: ${response.status}`);
                 }
